@@ -60,15 +60,15 @@ public class ControllerTickets {
 
     @GetMapping(value = "/list")
     public List<Ticket> getAllUnreservedTickets() {
-        List<Ticket> list = ticketService.fndAllTickets();
 
+        List<Ticket> list = ticketService.fndAllTickets();
         return list.stream().filter(el -> !el.getReserved()).collect(Collectors.toList());
     }
 
     @ResponseStatus(code = HttpStatus.OK)
     @PostMapping("/ticket/reserving/{clientId}/{flightId}")
     public void reservingTicket(@PathVariable(name = "flightId") Long flightId,
-                               @PathVariable(name = "clientId") Long clientId) {
+                                @PathVariable(name = "clientId") Long clientId) {
 
         Flight flight = flightService.findFlightById(flightId);
         Client client = clientService.findClientById(clientId);
@@ -108,7 +108,7 @@ public class ControllerTickets {
         Flight flight = flightService.findFlightById(flightId);
         Client client = clientService.findClientById(clientId);
 
-        double cost = flight.getCost() ;
+        double cost = flight.getCost();
         int cashBack = client.getCashBack();
 
         if (flight.getCountPlaces() == 0) {
@@ -119,10 +119,70 @@ public class ControllerTickets {
 
             Ticket ticket = new Ticket();
 
-            if (client.getCashBack() >= 0){
+            if (client.getCashBack() >= 0) {
                 cost = cost + (cost * 0.5 - cashBack);
-                cashBack += cashBack(cost,client.getTotalBuy());
+                cashBack += cashBack(cost, client.getTotalBuy());
             }
+
+            ticket.setCost(cost);
+            ticket.setCompanyName(flight.getCompanyName());
+            ticket.setFinishPoint(flight.getFinishPoint());
+            ticket.setStartPoint(flight.getStartPoint());
+            ticket.setReserved(true);
+            ticket.setBuy(true);
+            ticket.setTimeToFinish(flight.getTimeToFinish());
+            ticket.setTimeToStart(flight.getTimeToStart());
+            ticket.setClient(client);
+            ticket.setFlight(flight);
+
+            client.setTotalBuy(client.getTotalBuy() + 1);
+            client.setCashBack(cashBack);
+
+            flight.setCountPlaces(flight.getCountPlaces() - 1);
+
+            flightService.saveFlight(flight);
+            clientService.saveClient(client);
+            ticketService.saveTicket(ticket);
+
+        } else {
+            throw new FlightNotFoundException(flightId);
+        }
+
+    }
+
+    private double cashBack(double cost, int totalBuy) {
+        double bonuses;
+        if (totalBuy < 10) {
+            bonuses = cost * 0.05;
+        } else if (totalBuy > 10 && totalBuy < 20) {
+            bonuses = cost * 0.10;
+        } else {
+            bonuses = cost * 0.15;
+        }
+        return bonuses;
+    }
+
+
+    @ResponseStatus(code = HttpStatus.OK)
+    @PostMapping("/ticket/reserved/buy/{clientId}/{flightId}/{ticketId}")
+    public void buyTicketIfHasReservedTickets(@PathVariable(name = "flightId") Long flightId,
+                                              @PathVariable(name = "clientId") Long clientId,
+                                              @PathVariable(name = "ticketId") Long ticketId) {
+
+
+        Flight flight = flightService.findFlightById(flightId);
+        Client client = clientService.findClientById(clientId);
+        Ticket ticket = ticketService.findTicketById(ticketId);
+
+        double cost = flight.getCost();
+        int cashBack = client.getCashBack();
+
+        if (client.getCashBack() >= 0) {
+            cost = cost + (cost * 0.5 - cashBack);
+            cashBack += cashBack(cost, client.getTotalBuy());
+        }
+
+        if (flight.isActive()) {
 
             ticket.setCost(cost);
             ticket.setCompanyName(flight.getCompanyName());
@@ -149,70 +209,7 @@ public class ControllerTickets {
             throw new FlightNotFoundException(flightId);
         }
 
-    }
 
-    private double cashBack(double cost, int totalBuy) {
-        double bonuses = 0;
-        if (totalBuy < 10){
-            bonuses = cost * 0.05;
-        }else
-        if (totalBuy > 10 && totalBuy < 20){
-            bonuses = cost * 0.10;
-        }else {
-            bonuses = cost * 0.15;
-        }
-        return bonuses;
-    }
-
-
-    @ResponseStatus(code = HttpStatus.OK)
-    @PostMapping("/ticket/buy/reserved/{clientId}/{flightId}/{ticketId}")
-    public void buyTicketIfHasReservedTickets(@PathVariable(name = "flightId") Long flightId,
-                                              @PathVariable(name = "clientId") Long clientId,
-                                              @PathVariable(name = "ticketId") Long ticketId) {
-//
-//        Flight flight = flightService.findFlightById(flightId);
-//        Client client = clientService.findClientById(clientId);
-//
-//        Ticket ticket = ticketService.findTicketById(ticketId);
-//
-//        ticketBuyAndReservedHelper(flightId, flight, client);
-
-    }
-
-
-    private void ticketBuyAndReservedHelper(@PathVariable(name = "flightId") Long flightId, Flight flight, Client client) {
-        if (flight.getCountPlaces() == 0) {
-            flight.setActive(false);
-            flightService.saveFlight(flight);
-        }
-        if (flight.isActive()) {
-
-            Ticket ticket = new Ticket();
-
-            ticket.setCost(flight.getCost());
-            ticket.setCompanyName(flight.getCompanyName());
-            ticket.setFinishPoint(flight.getFinishPoint());
-            ticket.setStartPoint(flight.getStartPoint());
-
-            ticket.setReserved(true);
-            ticket.setBuy(false);
-
-            ticket.setTimeToFinish(flight.getTimeToFinish());
-            ticket.setTimeToStart(flight.getTimeToStart());
-
-            ticket.setClient(client);
-            ticket.setFlight(flight);
-
-            flight.setCountPlaces(flight.getCountPlaces() - 1);
-            flightService.saveFlight(flight);
-
-            ticketService.saveTicket(ticket);
-
-
-        } else {
-            throw new FlightNotFoundException(flightId);
-        }
     }
 
 
