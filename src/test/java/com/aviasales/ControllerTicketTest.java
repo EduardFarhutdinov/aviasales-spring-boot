@@ -15,11 +15,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
 @RunWith(SpringRunner.class)
@@ -52,7 +53,6 @@ public class ControllerTicketTest {
     }
 
     @Test
-
     public void should_Return404_When_TicketNotFound() throws Exception {
       String error =  mockMvc.perform(get("/tickets/ticket/11"))
                 .andDo(print())
@@ -63,5 +63,23 @@ public class ControllerTicketTest {
     }
 
 
+    @Test
+    public void should_get_all_unreserved_tickets() throws Exception{
+        mockMvc.perform(get("/tickets/list/"))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$",hasSize(1)))
+                .andExpect(jsonPath("$[0].id",is(1)))
+                .andExpect(jsonPath("$[0].buy",is(false)))
+                .andExpect(jsonPath("$[0].companyName",is("Аэрофлот")))
+                .andExpect(jsonPath("$[0].cost",is(23500.0)));
+    }
 
+    @Test
+    public void should_get_all_unreserved_tickets_between_cost() throws Exception{
+        mockMvc.perform(get("/tickets/filter/cost/20000.0/30000.0"))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$",hasSize(2)));
+    }
 }
