@@ -52,8 +52,8 @@ public class ControllerTickets {
 
 
     @GetMapping(value = "/filter/cost/{from}/{to}")
-    public List<Ticket> getTicketsByCostBetween(@PathVariable(name = "from") Long from,
-                                                @PathVariable(name = "to") Long to) {
+    public List<Ticket> getTicketsByCostBetween(@PathVariable(name = "from") Double from,
+                                                @PathVariable(name = "to") Double to) {
 
         return ticketService.findCostBetween(from, to).stream().filter(el -> !el.getReserved()).collect(Collectors.toList());
     }
@@ -167,7 +167,7 @@ public class ControllerTickets {
     @PostMapping("/ticket/reserved/buy/{clientId}/{flightId}/{ticketId}")
     public void buyTicketIfHasReservedTickets(@PathVariable(name = "flightId") Long flightId,
                                               @PathVariable(name = "clientId") Long clientId,
-                                              @PathVariable(name = "ticketId") Long ticketId) {
+                                              @PathVariable(name = "ticketId") Long ticketId) throws FlightNotFoundException {
 
 
         Flight flight = flightService.findFlightById(flightId);

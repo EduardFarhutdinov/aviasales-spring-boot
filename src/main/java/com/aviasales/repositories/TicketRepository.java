@@ -16,7 +16,7 @@ public interface TicketRepository extends JpaRepository<Ticket,Long> {
 
     public List<Ticket> findByReservedFalse();
 
-    public List<Ticket> findByCostBetween(Long from, Long to);
+    public List<Ticket> findByCostBetween(Double from, Double to);
 
     public List<Ticket> findByTimeToStartBetween(Date from, Date to);
 }

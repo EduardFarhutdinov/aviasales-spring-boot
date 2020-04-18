@@ -44,7 +44,7 @@ public class TicketService {
         return tickets;
     }
 
-    public List<Ticket> findCostBetween(Long from,Long to){
+    public List<Ticket> findCostBetween(Double from,Double to){
 
         return ticketRepository.findByCostBetween(from, to);
     }
